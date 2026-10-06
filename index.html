@@ -133,6 +133,14 @@ button.head:focus-visible{outline:3px solid var(--blue2);outline-offset:-3px}
 .doc>.head .ttl{font-size:1.4rem}
 .sys.logo{background:#fff;color:#14213D!important;gap:6px;padding:2px 8px}.sys.logo::before{display:none}.sys.logo img{display:block;max-width:none}.proc.open>.head .sys.logo,.act.open>.head .sys.logo,.frame.open>.head .sys.logo,.doc.open>.head .sys.logo{color:#14213D!important}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sys:not(.logo){filter:brightness(1.7)}}:root[data-theme="dark"] .sys:not(.logo){filter:brightness(1.7)}
+.vstrip{padding:8px 12px 10px;background:var(--card);border-top:1px solid var(--line)}
+.vbtn{all:unset;cursor:pointer;box-sizing:border-box;display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:var(--blue2);color:#fff;font-weight:700;font-size:.82rem}
+.vbtn:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+.vbtn[aria-expanded="true"]{background:var(--note)}
+.vplay{margin-top:10px;width:100%}
+.vplay video{display:block;width:100%;max-height:70vh;border-radius:10px;background:#000}
+.vplay small{display:block;margin-top:6px;color:var(--mute);font-size:.74rem}
+.frame.open>.vstrip{border-top:0}
 </style></head><body>
 <main>
 <header><h1>Manual de Processos WMS</h1><p class="sub">Toque numa etapa para abrir o fluxo. Várias podem ficar abertas.</p></header>
@@ -215,7 +223,11 @@ const PROC=[[
  {start:ev('Recebimento pendente cadastrado via integração','start'),items:[0,1,2,{q:'WMS apontou divergência no recebimento?',a:3,skip:'Recebimento finalizado com sucesso'}],end:ev('Pedido disponível para armazenamento → inicia o Processo 3')},
  {start:ev('Pedido disponível para armazenamento','start'),items:[0,1,2],end:ev('Processo de recebimento e armazenamento concluído','end')}]];
 function head(tag,t,o){return `<button class="head" aria-expanded="false"><div class="t"><svg class="ar" width="14" height="14" viewBox="0 0 14 14"><path d="M4 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span class="tag">${tag}</span><span class="ttl">${t}</span></div></div>${meta(o)}</button>`}
-function frame(pi,ai,dp){const D=DOCS[cur].data;const A=D[pi].acts[ai],k=cur+'p'+pi+'a'+ai;return `<div class="frame ${state[k]?'open':''}" style="width:100%" data-k="${k}">${head('Atividade '+(ai+1),A.n,A)}<div class="body"><div class="flowwrap">${state[k]?R(FLOW[cur][pi+'.'+ai],A,dp):''}</div></div></div>`}
+const VCODES=['rec-2-1','rec-2-2','rec-2-3','rec-2-4','rec-3-1','rec-3-2','rec-3-3','sep-1-1','sep-1-2','sep-1-3','sep-2-1','sep-2-2','sep-2-3','sep-3-1','sep-4-1','sep-4-3'];
+const VID={};const vstate={};
+const vcode=(pi,ai)=>(cur===1?'rec':'sep')+'-'+(pi+1)+'-'+(ai+1);
+const vstrip=c=>VID[c]?`<div class="vstrip"><button class="vbtn" data-v="${c}" aria-expanded="${!!vstate[c]}">▶ Ver vídeo no sistema</button>${vstate[c]?`<div class="vplay"><video controls playsinline preload="metadata" data-v="${c}" src="${VID[c]}"></video><small>Vídeo da atividade no WMS. Os números das caixas acima indicam a ordem dos passos.</small></div>`:''}</div>`:'';
+function frame(pi,ai,dp){const D=DOCS[cur].data;const A=D[pi].acts[ai],k=cur+'p'+pi+'a'+ai;return `<div class="frame ${state[k]?'open':''}" style="width:100%" data-k="${k}">${head('Atividade '+(ai+1),A.n,A)}${vstrip(vcode(pi,ai))}<div class="body"><div class="flowwrap">${state[k]?R(FLOW[cur][pi+'.'+ai],A,dp):''}</div></div></div>`}
 function procBody(pi){const p=PROC[cur][pi];const parts=[`<div class="evp start">${p.start.x}</div>`];
  p.items.forEach(it=>{
   if(typeof it==='number')parts.push(frame(pi,it));
@@ -226,15 +238,19 @@ function procBody(pi){const p=PROC[cur][pi];const parts=[`<div class="evp start"
 function docObj(i){return {acts:DOCS[i].data.flatMap(P=>P.acts)}}
 function render(){
  const app=document.getElementById('app');
+ const vt={};app.querySelectorAll('video').forEach(v=>{vt[v.dataset.v]={t:v.currentTime,p:!v.paused}});
  app.innerHTML=[1,0].map(i=>{cur=i;const D=DOCS[i].data;const k='d'+i;
   const inner=state[k]?`<div class="dl">${D.map((P,pi)=>`<div class="proc ${state[cur+'p'+pi]?'open':''}" data-k="${cur}p${pi}">${head('Processo '+(pi+1),P.n,P)}<div class="body"><div class="flowwrap">${state[cur+'p'+pi]?procBody(pi):''}</div></div></div>`).join('')}</div>`:'';
   return `<div class="doc ${state[k]?'open':''}" data-k="${k}">${head('Fluxo',DOCS[i].name,docObj(i))}<div class="body">${inner}</div></div>`}).join('');
  app.querySelectorAll('.head').forEach(b=>{const el=b.parentElement;b.setAttribute('aria-expanded',el.classList.contains('open'));b.onclick=e=>{e.stopPropagation();const k=el.dataset.k;state[k]=!state[k];render()}});
+ app.querySelectorAll('.vbtn').forEach(b=>{b.onclick=e=>{e.stopPropagation();const c=b.dataset.v;vstate[c]=!vstate[c];render();if(vstate[c]){const v=document.querySelector('video[data-v="'+c+'"]');if(v)v.play().catch(()=>{})}}});
+ app.querySelectorAll('video').forEach(v=>{const s=vt[v.dataset.v];if(s){v.addEventListener('loadedmetadata',()=>{try{v.currentTime=s.t}catch(e){}if(s.p)v.play().catch(()=>{})},{once:true})}});
  const D=DOCS.flatMap(d=>d.data);
  const roles=uniq(D.flatMap(P=>subs(P).map(s=>s.r))),syss=uniq(D.flatMap(P=>subs(P).map(s=>s.s)));
  document.getElementById('leg').innerHTML='<small>Cargos</small>'+roles.map(r=>`<button class="chip" data-r="${r}" style="background:${COL[r]};${focus===r?'outline:3px solid var(--fg)':''}">${r}</button>`).join('')+'<small style="margin-top:6px">Sistemas</small>'+syss.map(sc).join('');
  document.querySelectorAll('#leg button').forEach(b=>b.onclick=()=>{focus=focus===b.dataset.r?null:b.dataset.r;render()});
 }
 render();
+VCODES.forEach(c=>{const u='videos/'+c+'.mp4';try{fetch(u,{method:'HEAD'}).then(r=>{if(r.ok){VID[c]=u;render()}}).catch(()=>{})}catch(e){}});
 </script>
 </body></html>
