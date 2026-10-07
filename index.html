@@ -224,7 +224,7 @@ const PROC=[[
  {start:ev('Pedido disponível para armazenamento','start'),items:[0,1],end:ev('Processo de recebimento e armazenamento concluído','end')}]];
 function head(tag,t,o){return `<button class="head" aria-expanded="false"><div class="t"><svg class="ar" width="14" height="14" viewBox="0 0 14 14"><path d="M4 2l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span class="tag">${tag}</span><span class="ttl">${t}</span></div></div>${meta(o)}</button>`}
 const VCODES=['rec-2-1','rec-2-2','rec-2-3','rec-2-4','rec-3-1','rec-3-2','sep-1-1','sep-1-2','sep-1-3','sep-2-1','sep-2-2','sep-2-3','sep-3-1','sep-4-1','sep-4-3'];
-const YT={'rec-2-1':'c26fxul_s94','rec-2-3':'rkB32CEg6Gk'};
+const YT={'rec-2-1':'c26fxul_s94','rec-2-3':'SDO8mY8k5YU','rec-2-4':'InTIgEjD42w','rec-3-1':'RrBvRhJ4fio','rec-3-2':'EQkV3EeesFQ'};
 const VID={};Object.keys(YT).forEach(c=>VID[c]=1);const vstate={};
 const vcode=(pi,ai)=>(cur===1?'rec':'sep')+'-'+(pi+1)+'-'+(ai+1);
 const vstrip=c=>VID[c]?`<div class="vstrip"><button class="vbtn" data-v="${c}" aria-expanded="${!!vstate[c]}">▶ Ver vídeo no sistema</button>${vstate[c]?`<div class="vplay">${YT[c]?`<iframe class="yt" title="Vídeo da atividade" src="https://www.youtube-nocookie.com/embed/${YT[c]}?rel=0&playsinline=1&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`:`<video controls playsinline preload="metadata" data-v="${c}" src="${VID[c]}"></video>`}<small>Vídeo da atividade no WMS. Os números das caixas acima indicam a ordem dos passos.</small></div>`:''}</div>`:'';
