@@ -142,6 +142,10 @@ button.head:focus-visible{outline:3px solid var(--blue2);outline-offset:-3px}
 .vplay .yt{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
 .vplay small{display:block;margin-top:6px;color:var(--mute);font-size:.74rem}
 .frame.open>.vstrip{border-top:0}
+.fbox.hl{box-shadow:0 0 0 3px var(--rc),0 5px 16px rgba(0,0,0,.22)}
+.hit>.head{box-shadow:inset 6px 0 0 var(--fc)}
+.miss{opacity:.55}
+.chip{cursor:pointer}
 </style></head><body>
 <main>
 <header><h1>Manual de Processos WMS</h1><p class="sub">Toque numa etapa para abrir o fluxo. Várias podem ficar abertas.</p></header>
@@ -161,7 +165,7 @@ const meta=o=>{const s=subs(o);return `<div class="meta"><b>Responsáveis</b><di
 let focus=null,cur=0;const state={};
 const ARR='<div class="arr2"></div>';
 const clean=t=>{let x=t.replace(/^Caso possua item em estoque, mas em local indisponível para picking, /,'').replace(/^caso produto não possua disponibilidade de reserva: /i,'').replace(/^Caso [^,:]*[,:] ?/i,'').replace(/^Em paralelo, /,'');return x.charAt(0).toUpperCase()+x.slice(1)};
-const box=(s,n)=>`<div class="fbox" style="--rc:${COL[s.r]};${focus&&s.r!==focus?'opacity:.25':''}"><span class="num">${n}</span><div class="h">Ação · ${s.r}</div><div class="x">${clean(s.n)}</div>${s.o?`<div class="obs2">${s.o}</div>`:''}<div class="sysrow">${sc(s.s)}</div></div>`;
+const box=(s,n)=>`<div class="fbox${focus&&s.r===focus?' hl':''}" style="--rc:${COL[s.r]};${focus&&s.r!==focus?'opacity:.25':''}"><span class="num">${n}</span><div class="h">Ação · ${s.r}</div><div class="x">${clean(s.n)}</div>${s.o?`<div class="obs2">${s.o}</div>`:''}<div class="sysrow">${sc(s.s)}</div></div>`;
 const seq=a=>a.map((x,i)=>(i?ARR:'')+x).join('');
 const BARS=(top,bot)=>(top?'<span class="hb t"></span>':'')+(bot?'<span class="hb b"></span>':'');
 const DIA=(q,par)=>`<div class="gwrow"><div class="dia"><span>${par?'+':'×'}</span></div><div class="gwq"><small>${par?'Em paralelo':'Decisão'}</small>${q||''}</div></div>`;
@@ -227,7 +231,7 @@ const YT={'rec-2-1':'c26fxul_s94','rec-2-3':'SDO8mY8k5YU','rec-2-4':'InTIgEjD42w
 const VID={};Object.keys(YT).forEach(c=>VID[c]=1);const vstate={};
 const vcode=(pi,ai)=>(cur===1?'rec':'sep')+'-'+(pi+1)+'-'+(ai+1);
 const vstrip=c=>VID[c]?`<div class="vstrip"><button class="vbtn" data-v="${c}" aria-expanded="${!!vstate[c]}">▶ Ver vídeo no sistema</button>${vstate[c]?`<div class="vplay">${YT[c]?`<iframe class="yt" title="Vídeo da atividade" src="https://www.youtube-nocookie.com/embed/${YT[c]}?rel=0&playsinline=1&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`:`<video controls playsinline preload="metadata" data-v="${c}" src="${VID[c]}"></video>`}<small>Vídeo da atividade no WMS. Os números das caixas acima indicam a ordem dos passos.</small></div>`:''}</div>`:'';
-function frame(pi,ai,dp){const D=DOCS[cur].data;const A=D[pi].acts[ai],k=cur+'p'+pi+'a'+ai;return `<div class="frame ${state[k]?'open':''}" style="width:100%" data-k="${k}">${head('Atividade '+(ai+1),A.n,A)}${vstrip(vcode(pi,ai))}<div class="body"><div class="flowwrap">${state[k]?R(FLOW[cur][pi+'.'+ai],A,dp):''}</div></div></div>`}
+function frame(pi,ai,dp){const D=DOCS[cur].data;const A=D[pi].acts[ai],k=cur+'p'+pi+'a'+ai;return `<div class="frame ${state[k]?'open':''}${fcls(A)}" style="width:100%" data-k="${k}">${head('Atividade '+(ai+1),A.n,A)}${vstrip(vcode(pi,ai))}<div class="body"><div class="flowwrap">${state[k]?R(FLOW[cur][pi+'.'+ai],A,dp):''}</div></div></div>`}
 function procBody(pi){const p=PROC[cur][pi];const parts=[`<div class="evp start">${p.start.x}</div>`];
  p.items.forEach(it=>{
   if(typeof it==='number')parts.push(frame(pi,it));
@@ -235,20 +239,23 @@ function procBody(pi){const p=PROC[cur][pi];const parts=[`<div class="evp start"
   else if(it.xor){const X=it.xor;parts.push(GW2(X.q,false,X.br,false,1,null,b=>frame(pi,b.a,1)))}
   else parts.push(COND(it.q,'right',frame(pi,it.a,1),it.skip,null,1))});
  if(p.end)parts.push(`<div class="evp ${p.end.k}">${p.end.x}</div>`);return seq(parts)}
+const fcls=o=>focus?(subs(o).some(s=>s.r===focus)?' hit':' miss'):'';
 function docObj(i){return {acts:DOCS[i].data.flatMap(P=>P.acts)}}
+function openRole(r){DOCS.forEach((d,i)=>d.data.forEach((P,pi)=>P.acts.forEach((a,ai)=>{if(a.subs.some(x=>!x.note&&x.r===r)){state['d'+i]=1;state[i+'p'+pi]=1;state[i+'p'+pi+'a'+ai]=1}})))}
 function render(){
- const app=document.getElementById('app');
+ const app=document.getElementById('app');app.style.setProperty('--fc',focus?COL[focus]:'transparent');
  const vt={};app.querySelectorAll('video').forEach(v=>{vt[v.dataset.v]={t:v.currentTime,p:!v.paused}});
  app.innerHTML=[1,0].map(i=>{cur=i;const D=DOCS[i].data;const k='d'+i;
-  const inner=state[k]?`<div class="dl">${D.map((P,pi)=>`<div class="proc ${state[cur+'p'+pi]?'open':''}" data-k="${cur}p${pi}">${head('Processo '+(pi+1),P.n,P)}<div class="body"><div class="flowwrap">${state[cur+'p'+pi]?procBody(pi):''}</div></div></div>`).join('')}</div>`:'';
-  return `<div class="doc ${state[k]?'open':''}" data-k="${k}">${head('Fluxo',DOCS[i].name,docObj(i))}<div class="body">${inner}</div></div>`}).join('');
+  const inner=state[k]?`<div class="dl">${D.map((P,pi)=>`<div class="proc ${state[cur+'p'+pi]?'open':''}${fcls(P)}" data-k="${cur}p${pi}">${head('Processo '+(pi+1),P.n,P)}<div class="body"><div class="flowwrap">${state[cur+'p'+pi]?procBody(pi):''}</div></div></div>`).join('')}</div>`:'';
+  return `<div class="doc ${state[k]?'open':''}${fcls(docObj(i))}" data-k="${k}">${head('Fluxo',DOCS[i].name,docObj(i))}<div class="body">${inner}</div></div>`}).join('');
  app.querySelectorAll('.head').forEach(b=>{const el=b.parentElement;b.setAttribute('aria-expanded',el.classList.contains('open'));b.onclick=e=>{e.stopPropagation();const k=el.dataset.k;state[k]=!state[k];render()}});
  app.querySelectorAll('.vbtn').forEach(b=>{b.onclick=e=>{e.stopPropagation();const c=b.dataset.v;vstate[c]=!vstate[c];render();if(vstate[c]){const v=document.querySelector('video[data-v="'+c+'"]');if(v)v.play().catch(()=>{})}}});
  app.querySelectorAll('video').forEach(v=>{const s=vt[v.dataset.v];if(s){v.addEventListener('loadedmetadata',()=>{try{v.currentTime=s.t}catch(e){}if(s.p)v.play().catch(()=>{})},{once:true})}});
  const D=DOCS.flatMap(d=>d.data);
  const roles=uniq(D.flatMap(P=>subs(P).map(s=>s.r))),syss=uniq(D.flatMap(P=>subs(P).map(s=>s.s)));
  document.getElementById('leg').innerHTML='<small>Cargos</small>'+roles.map(r=>`<button class="chip" data-r="${r}" style="background:${COL[r]};${focus===r?'outline:3px solid var(--fg)':''}">${r}</button>`).join('')+'<small style="margin-top:6px">Sistemas</small>'+syss.map(sc).join('');
- document.querySelectorAll('#leg button').forEach(b=>b.onclick=()=>{focus=focus===b.dataset.r?null:b.dataset.r;render()});
+ document.querySelectorAll('#leg button[data-r]').forEach(b=>b.onclick=()=>{focus=focus===b.dataset.r?null:b.dataset.r;if(focus)openRole(focus);render();if(focus){const h=document.querySelector('#app .fbox.hl');if(h)h.scrollIntoView({behavior:'smooth',block:'center'})}});
+ const hint=document.getElementById('hint');if(focus){let n=0,m=0;DOCS.forEach(d=>d.data.forEach(P=>P.acts.forEach(a=>{const c=a.subs.filter(x=>!x.note&&x.r===focus).length;if(c){n+=c;m++}})));hint.innerHTML='<b>'+focus+'</b>: '+n+' passos em '+m+' atividades, abertos e destacados abaixo. Toque no cargo de novo para limpar.'}else hint.textContent='Toque em um cargo da legenda para abrir e destacar as atividades dele.';
 }
 render();
 VCODES.filter(c=>!YT[c]).forEach(c=>{const u='videos/'+c+'.mp4';try{fetch(u,{method:'HEAD'}).then(r=>{if(r.ok){VID[c]=u;render()}}).catch(()=>{})}catch(e){}});
