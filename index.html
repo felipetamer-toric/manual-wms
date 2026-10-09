@@ -286,7 +286,7 @@ function openRole(r){DOCS.forEach((d,i)=>d.data.forEach((P,pi)=>P.acts.forEach((
 function render(){
  const app=document.getElementById('app');app.style.setProperty('--fc',focus?COL[focus]:'transparent');
  const vt={};app.querySelectorAll('video').forEach(v=>{vt[v.dataset.v]={t:v.currentTime,p:!v.paused}});
- app.innerHTML=[1,0,2].map(i=>{cur=i;const D=DOCS[i].data;const k='d'+i;
+ app.innerHTML=[2,1,0].map(i=>{cur=i;const D=DOCS[i].data;const k='d'+i;
   const inner=state[k]?`<div class="dl">${D.map((P,pi)=>`<div class="proc ${state[cur+'p'+pi]?'open':''}${fcls(P)}" data-k="${cur}p${pi}">${head('Processo '+(pi+1),P.n,P)}<div class="body"><div class="flowwrap">${state[cur+'p'+pi]?procBody(pi):''}</div></div></div>`).join('')}</div>`:'';
   return `<div class="doc ${state[k]?'open':''}${fcls(docObj(i))}" data-k="${k}">${head('Fluxo',DOCS[i].name,docObj(i))}<div class="body">${inner}</div></div>`}).join('');
  app.querySelectorAll('.head').forEach(b=>{const el=b.parentElement;b.setAttribute('aria-expanded',el.classList.contains('open'));b.onclick=e=>{e.stopPropagation();const k=el.dataset.k;state[k]=!state[k];render()}});
